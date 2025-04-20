@@ -17,6 +17,7 @@ import { UrlModule } from '@modules/shorten/url.module';
 import { LoggerMiddleware } from '@modules/middleware';
 import { RedirectMiddleware } from '@modules/middleware/redirect.middleware';
 import * as cookieParser from 'cookie-parser';
+import { RedisCacheModule } from '@modules/cache/cache.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import * as cookieParser from 'cookie-parser';
 			inject: [ConfigService],
 		}),
     SharedModule,
+    RedisCacheModule,
     ZookeeperModule,
     UserModule,
     AuthModule,

@@ -6,6 +6,7 @@ import { ZookeeperModule } from "@modules/zookeeper/zookeeper.module";
 import { UrlService } from "./url.service";
 import { UrlController } from "./url.controller";
 import { UrlRepository } from "@repositories/url.repository";
+import { RedisCacheModule } from "@modules/cache/cache.module";
 
 @Module({
     imports:[
@@ -16,6 +17,7 @@ import { UrlRepository } from "@repositories/url.repository";
             },
         ]),
         SharedModule,
+        RedisCacheModule,
         ZookeeperModule
     ],
     providers: [
