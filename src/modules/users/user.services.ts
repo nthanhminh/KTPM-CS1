@@ -1,15 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { UserRepository } from "@repositories/user.repository";
 import { BaseServiceAbstract } from "src/services/base/base.abstract.service";
 import { User } from "./entity/user.entity";
 import { CreateNewUserDto } from "./dto/createNewUser.dto";
 import { UpdateUserDto } from "./dto/updateUser.dto";
+import { UsersRepository } from "@repositories/user.repository";
 
 @Injectable()
 export class UsersService extends BaseServiceAbstract<User>{
     constructor(
-        @Inject('USER_REPOSITORY')
-        private readonly userRepository: UserRepository,
+        @Inject('UsersRepositoryInterface')
+        private readonly userRepository: UsersRepository,
       ) {
         super(userRepository);
       }

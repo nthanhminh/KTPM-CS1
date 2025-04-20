@@ -1,9 +1,14 @@
-import { PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Prop } from '@nestjs/mongoose';
+import { Expose, Transform } from 'class-transformer';
+import { ObjectId } from 'mongoose';
 
-export abstract class BaseEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class BaseEntity {
+	_id?: ObjectId | string;
 
-    @Column({ nullable: true })
-    deletedAt?: Date;
+	@Expose()
+	@Transform((value) => value.obj?._id?.toString(), { toClassOnly: true })
+	id?: string;
+
+	@Prop({ default: null })
+	deletedAt?: Date;
 }

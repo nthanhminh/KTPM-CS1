@@ -1,48 +1,53 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  DeleteDateColumn,
-} from 'typeorm';
 import { ERolesUser } from '../enums/index.enum';
+import { HydratedDocument } from 'mongoose';
+import { BaseEntity } from '@modules/shared/base/base.entity';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Exclude } from 'class-transformer';
 
-@Entity()
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export type UserDocument = HydratedDocument<User>;
 
-  @Column({ length: 500 })
+@Schema({
+	timestamps: {
+		createdAt: 'createdAt',
+		updatedAt: 'updatedAt',
+	},
+	toJSON: {
+		getters: true,
+		virtuals: true,
+	},
+})
+export class User extends BaseEntity {
+  @Prop({ length: 500 })
   name: string;
 
-  @Column({ type: 'enum', enum: ERolesUser, default: ERolesUser.USER })
+  @Prop({ enum: ERolesUser, default: ERolesUser.USER })
   role: ERolesUser;
 
-  @Column('text')
+  @Prop()
   email: string;
 
-  @Column('text')
+  @Prop()
   password: string;
 
-  @Column('date', { default: () => 'CURRENT_DATE' })
-  birthOfDate: Date;
-
-  @Column('int')
-  age: number;
-
-  @Column('text', {
+  @Prop({
+    required: false,
     default: null,
   })
   currentAccessToken: string;
 
-  @Column('text', {
+  @Prop({
+    required: false,
     default: null,
   })
   refreshToken: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @DeleteDateColumn()
-  deletedAt: Date | null; 
 }
+
+export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ createdAt: -1 });
+UserSchema.index({ fullName: -1 });
+
+export const UserSchemaFactory = () => {
+	const userSchema = UserSchema;
+
+	return userSchema;
+};

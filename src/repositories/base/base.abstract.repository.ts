@@ -1,95 +1,162 @@
-import { Repository, DataSource, DeepPartial, EntityTarget, FindOptionsWhere, FindOneOptions, SaveOptions, UpdateResult, DeleteResult } from 'typeorm';
 import { BaseEntity } from '@modules/shared/base/base.entity';
+import {
+	ClientSession,
+	Connection,
+	FilterQuery,
+	Model,
+	PipelineStage,
+	QueryOptions,
+	SaveOptions,
+} from 'mongoose';
 import { FindAllResponse } from 'src/types/common.type';
 import { BaseRepositoryInterface } from './base.interface.repository';
 
 export abstract class BaseRepositoryAbstract<T extends BaseEntity>
 	implements BaseRepositoryInterface<T>
 {
-	protected readonly repository: Repository<T>;
-
-	constructor(
-		entity: EntityTarget<T>,
-		private readonly dataSource: DataSource,
+	protected constructor(
+		private readonly model: Model<T>,
+		private readonly connection: Connection,
 	) {
-		this.repository = dataSource.getRepository(entity);
+		this.model = model;
 	}
 
-	async create(dto: DeepPartial<T>, options?: SaveOptions): Promise<T> {
-		const entity = this.repository.create(dto);
-		return await this.repository.save(entity, options);
-	}	
-
-	async insert(dtos: DeepPartial<T>[]): Promise<T[]> {
-		const entities = this.repository.create(dtos); 
-		return await this.repository.save(entities);
+	async create(dto: T | any, options?: SaveOptions): Promise<T> {
+		return this.model.create(dto);
 	}
-	
 
-	async findOneById(id: string, options?: FindOneOptions<T>): Promise<T | null> {
-		return await this.repository.findOne({ where: { id } as FindOptionsWhere<T>, ...options });
+	async insert(dtos: T[] | any[]): Promise<any> {
+		return this.model.insertMany(dtos);
+	}
+
+	async findOneById(
+		id: string,
+		projection?: string,
+		options?: QueryOptions<T>,
+	): Promise<T> {
+		const item = await this.model.findById(id, projection, options);
+		return item?.deletedAt ? null : item.toObject();
 	}
 
 	async findOneByCondition(
-		condition: FindOptionsWhere<T>,
-		options?: FindOneOptions<T>,
-	): Promise<T | null> {
-		return await this.repository.findOne({ where: condition, ...options });
+		condition = {},
+		options?: QueryOptions<T>,
+	): Promise<T> {
+		return await this.model
+			.findOne(
+				{
+					...condition,
+					deletedAt: null,
+				},
+				options?.projection,
+				options,
+			)
+			.exec();
 	}
 
 	async findAll(
-		condition: FindOptionsWhere<T>,
-		options?: FindOneOptions<T>,
+		condition: FilterQuery<T>,
+		options?: QueryOptions<T>,
 	): Promise<FindAllResponse<T>> {
-		const [items, count] = await this.repository.findAndCount({
-			where: condition,
-			...options,
-		});
-		return { count, items };
+		const [count, items] = await Promise.all([
+			this.model.countDocuments({ ...condition, deletedAt: null }),
+			this.find({ ...condition, deletedAt: null }, options),
+		]);
+		return {
+			count,
+			items,
+		};
 	}
 
 	async find(
-		condition: FindOptionsWhere<T>,
-		options?: FindOneOptions<T>,
+		condition: FilterQuery<T>,
+		options?: QueryOptions<T>,
 	): Promise<T[]> {
-		return await this.repository.find({ where: condition, ...options });
+		return this.model.find(condition, options?.projection, options);
 	}
 
-	async update(id: string, dto: DeepPartial<T>): Promise<UpdateResult> {
-		return await this.repository.update(id, dto as any);
+	async findAllIncludeDeletedAt(
+		condition: FilterQuery<T>,
+		options?: QueryOptions<T>,
+	): Promise<FindAllResponse<T>> {
+		const [count, items] = await Promise.all([
+			this.model.countDocuments({ ...condition }),
+			this.model.find(condition, options?.projection, options),
+		]);
+		return {
+			count,
+			items,
+		};
 	}
 
-	async softDelete(id: string): Promise<UpdateResult> {
-		return await this.repository.softDelete(id);
+	//PipelineStage
+	async findByAggregate(pipeline: PipelineStage[]): Promise<any> {
+		return this.model.aggregate(pipeline);
 	}
 
-	async permanentlyDelete(id: string): Promise<DeleteResult> {
-		return await this.repository.delete(id);
+	async update(id: string, dto: Partial<T>): Promise<T> {
+		return await this.model.findOneAndUpdate(
+			{ _id: id, deletedAt: null },
+			dto,
+			{ new: true },
+		);
 	}
 
-	async updateMany(filter: FindOptionsWhere<T>, dto: DeepPartial<T>): Promise<UpdateResult> {
-		return await this.repository.update(filter, dto as any);
-	}
-
-	async upsertDocument(filter: FindOptionsWhere<T>, dto: DeepPartial<T>, options?: SaveOptions): Promise<T> {
-		const entity = await this.repository.preload({ ...filter, ...dto });
-		if (!entity) {
-			return await this.repository.save(dto, options);
+	async softDelete(id: string): Promise<boolean> {
+		const delete_item = await this.model.findById(id);
+		if (!delete_item) {
+			return false;
 		}
-		return await this.repository.save(entity);
+
+		return !!(await this.model
+			.findByIdAndUpdate<T>(id, { deletedAt: new Date() })
+			.exec());
 	}
 
-	async softDeleteMany(filter: FindOptionsWhere<T>): Promise<UpdateResult> {
-		return await this.repository.softDelete(filter);
+	async permanentlyDelete(id: string): Promise<boolean> {
+		const delete_item = await this.model.findById(id);
+		if (!delete_item) {
+			return false;
+		}
+		return !!(await this.model.findOneAndDelete({ _id: id }));
 	}
 
-	async deleteMany(filter: FindOptionsWhere<T>): Promise<DeleteResult> {
-		return await this.repository.delete(filter);
+	async updateMany(filter: FilterQuery<T>, dto: Partial<T>): Promise<any> {
+		return this.model.updateMany(
+			{
+				...filter,
+				deletedAt: null,
+			},
+			dto,
+		);
 	}
 
-	async startTransaction() {
-		const queryRunner = this.dataSource.createQueryRunner();
-		await queryRunner.startTransaction();
-		return queryRunner;
+	async upsertDocument(filter: any, update: any): Promise<any> {
+		const options = { upsert: true, new: true, setDefaultsOnInsert: true };
+		return this.model.findOneAndUpdate(filter, update, options).exec();
+	}
+
+	async softDeleteMany(filter: FilterQuery<T>): Promise<any> {
+		return this.model.updateMany(
+			{
+				...filter,
+				deletedAt: null,
+			},
+			{
+				deletedAt: new Date(),
+			},
+		);
+	}
+
+	async deleteMany(filter: FilterQuery<T>): Promise<any> {
+		return this.model.deleteMany({
+			...filter,
+		});
+	}
+
+	async startTransaction(): Promise<ClientSession> {
+		const session = await this.connection.startSession();
+		session.startTransaction();
+		return session;
 	}
 }

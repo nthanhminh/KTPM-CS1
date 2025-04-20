@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { DatabaseModule } from '@modules/databases/databases.module';
 import { UserModule } from '@modules/users/user.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -12,6 +10,8 @@ import { HttpErrorFilter } from './interceptors/httpError.filter';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
+import { MongooseModule } from '@nestjs/mongoose';
+import { SharedModule } from '@modules/shared/shared.module';
 
 @Module({
   imports: [
@@ -51,7 +51,17 @@ import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
         AcceptLanguageResolver,
       ],
     }),
-    DatabaseModule,
+    MongooseModule.forRootAsync({
+			imports: [ConfigModule],
+			useFactory: async (configService: ConfigService) => {
+				console.log('uri:: ', configService.get<string>('DATABASE_URI'));
+				return {
+					uri: configService.get<string>('DATABASE_URI'),
+				};
+			},
+			inject: [ConfigService],
+		}),
+    SharedModule,
     UserModule,
     AuthModule
   ],
