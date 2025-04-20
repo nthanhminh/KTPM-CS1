@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -12,17 +12,26 @@ import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '@modules/shared/shared.module';
+import { ZookeeperModule } from '@modules/zookeeper/zookeeper.module';
+import { UrlModule } from '@modules/shorten/url.module';
+import { LoggerMiddleware } from '@modules/middleware';
+import { RedirectMiddleware } from '@modules/middleware/redirect.middleware';
+import * as cookieParser from 'cookie-parser';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    BullModule.forRoot({
-      connection: {
-        host: 'localhost',
-        port: 6379,
-      },
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST'),
+          port: configService.get<number>('REDIS_PORT'),
+        },
+      }),
     }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
@@ -62,8 +71,10 @@ import { SharedModule } from '@modules/shared/shared.module';
 			inject: [ConfigService],
 		}),
     SharedModule,
+    ZookeeperModule,
     UserModule,
-    AuthModule
+    AuthModule,
+    UrlModule
   ],
   controllers: [AppController],
   providers: [
@@ -79,4 +90,10 @@ import { SharedModule } from '@modules/shared/shared.module';
 		},
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+      consumer
+        .apply(LoggerMiddleware, cookieParser(), RedirectMiddleware)
+        .forRoutes({ path: '*', method: RequestMethod.ALL });
+    }
+}

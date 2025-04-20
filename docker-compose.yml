@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs-app
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/nestjs?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ZOOKEEPER_HOST=zoo # Sử dụng tên service là zoo
+      - ZOOKEEPER_PORT=2181
+    depends_on:
+      - mongodb
+      - redis
+      - zoo # Đảm bảo rằng dịch vụ này đã sẵn sàng
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=nestjs
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+  zoo:
+    image: zookeeper:latest
+    container_name: zoo # Đặt tên container là zoo
+    ports:
+      - "2182:2181"
+    networks:
+      - app-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge
