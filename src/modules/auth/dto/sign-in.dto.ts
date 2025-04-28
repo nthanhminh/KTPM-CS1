@@ -1,24 +1,18 @@
-import { IsEnum, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EEnvironmentLogin } from '@modules/auth/enums';
 
 export class SignInDto {
-	@ApiProperty({
-		default: EEnvironmentLogin.APP_ADMIN,
-	})
-	@IsEnum(EEnvironmentLogin)
-	@IsNotEmpty()
-	environment: EEnvironmentLogin;
-
 	@ApiProperty({
 		default: 'admin',
 		description: 'email',
 	})
 	@MaxLength(50)
 	@IsNotEmpty({
-		message: 'auths.Please enter username',
+		message: 'auths.Please enter email',
 	})
-	accountId: string;
+	@IsEmail()
+	email: string;
 
 	@ApiProperty({
 		default: '12345678',

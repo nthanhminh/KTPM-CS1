@@ -74,11 +74,11 @@ import { RedisCacheModule } from '@modules/cache/cache.module';
     SharedModule,
     RedisCacheModule,
     ZookeeperModule,
-    UserModule,
+    // UserModule,
     AuthModule,
     UrlModule
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [
     AppService,
     AppService,

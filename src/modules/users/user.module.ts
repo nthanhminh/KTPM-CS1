@@ -21,6 +21,6 @@ import { UsersRepository } from "@repositories/user.repository";
         UsersService,
         { provide: 'UsersRepositoryInterface', useClass: UsersRepository },
     ],
-    controllers: [UsersController]
+    controllers: []
 })
 export class UserModule {}

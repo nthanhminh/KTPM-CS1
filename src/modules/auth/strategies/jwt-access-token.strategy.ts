@@ -15,19 +15,13 @@ export class JwtAccessTokenStrategy extends PassportStrategy(Strategy) {
 	) {
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-			// jwtFromRequest: ExtractJwt.fromExtractors([
-			// 	(req: Request) => {
-			// 		return req?.cookies['accessToken']; // Extract JWT from cookies
-			// 	},
-			// ]),
 			ignoreExpiration: false,
 			secretOrKey: configService.get<String>('JWT_ACCESS_SECRET'),
 		});
 	}
 
-	async validate({ uuidAccessToken, userId }: TokenPayload) {
-		const user = await this.usersService.getUserWithRole(userId);
-
+	async validate({ uuidAccessToken, sub }: TokenPayload) {
+		const user = await this.usersService.getUserWithRole(sub);
 		if (!user) {
 			throw new UnauthorizedException('auths.Account not found');
 		}
@@ -36,15 +30,9 @@ export class JwtAccessTokenStrategy extends PassportStrategy(Strategy) {
 			throw new UnauthorizedException('auths.Account is deleted');
 		}
 
-		// if (user?.status === EStatusUser.INACTIVE) {
-		// 	throw new UnauthorizedException('auths.Account inactive');
-		// }
-
-		// if (user.currentAccessToken !== uuidAccessToken && user.role === ERolesUser.USER)
-		// 	throw new UnauthorizedException(
-		// 		'auths.Account is signed in on another device',
-		// 	);
-
+		if (user?.status === EStatusUser.INACTIVE) {
+			throw new UnauthorizedException('auths.Account inactive');
+		}
 		return user;
 	}
 }

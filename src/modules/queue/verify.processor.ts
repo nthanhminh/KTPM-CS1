@@ -9,12 +9,11 @@ export class VerifyProcessor extends WorkerHost {
   }
 
   async process(job: Job<any>): Promise<void> {
-    console.log('data:', job.data);
     await this.mailService.sendMail({
       from: 'api990573@gmail.com',
-      to: 'ngothanhminhuet@gmail.com',
+      to: `${job.data.email}`,
       subject: `Verify your email`,
-      text: `google.com/verify?token=${job.data.code}`,
+      text: `${job.data.code}`,
     });
   }
 }

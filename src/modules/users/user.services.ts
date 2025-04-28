@@ -14,12 +14,7 @@ export class UsersService extends BaseServiceAbstract<User>{
         super(userRepository);
       }
     async create(dto: CreateNewUserDto) : Promise<User> {
-        const { birthOfDate, ...data } = dto;
-        const convertedBirthOfDate = new Date(birthOfDate);
-        return await this.userRepository.create({
-            ...data,
-            birthOfDate: convertedBirthOfDate
-        });
+        return await this.userRepository.create(dto);
     }
 
     async updateUser(dto: UpdateUserDto, user: User) : Promise<User> {

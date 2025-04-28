@@ -1,10 +1,10 @@
-// import { User } from '@modules/users/entities/user.entity';
 import {
 	BadRequestException,
 	ConflictException,
 	ForbiddenException,
 	HttpStatus,
 	Injectable,
+	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -40,6 +40,8 @@ import { UsersService } from '../users/user.services';
 import { CreateNewUserDto } from '@modules/users/dto/createNewUser.dto';
 import { AuthDto, AuthResponseDto } from './dto/auth.dto';
 import { VerifyService } from '@modules/queue/verify.service';
+import { SendCodeDto, VerifyCodeDto } from './dto/senCode.dto';
+import { CacheService } from '@modules/cache/cache.service';
 
 @Injectable()
 export class AuthService {
@@ -52,7 +54,8 @@ export class AuthService {
 		private readonly jwtService: JwtService,
 		// private readonly mailService: MailService,
 		private readonly sharedService: SharedService,
-		private readonly verifyService: VerifyService
+		private readonly verifyService: VerifyService,
+		private readonly cacheService: CacheService
 	) {
 		this.expTime = this.configService.get<number>(
 			'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
@@ -77,10 +80,7 @@ export class AuthService {
 		  newUser.role,
 		);
 		await this.updateRefreshToken(newUser.id, tokens.refreshToken);
-		await this.verifyService.addVerifyJob({
-		//   token: newUser.token,
-			code: 1234
-		});
+		await this.getCode({email: createUserDto.email})
 		return {
 			data: {
 				...tokens,
@@ -104,6 +104,63 @@ export class AuthService {
 			}
 		};
 	  }
+
+	  async getCode({ email }: SendCodeDto): Promise<string> {
+		const user = await this.usersService.findByEmail(email);
+		const code = Math.floor(100000 + Math.random() * 900000).toString();
+		const redisKey = `${user.id}:code`;
+	  
+		try {
+		  console.log(`--- SET CODE FOR USER ---`);
+		  console.log(`Email: ${email}`);
+		  console.log(`Redis Key: ${redisKey}`);
+		  console.log(`Generated Code: ${code}`);
+	  
+		  await this.cacheService.set<string>(redisKey, code, 30000); // TTL 5 phút
+	  
+		  const confirmCode = await this.cacheService.get<string>(redisKey);
+		  console.log(`Saved Code In Redis: ${confirmCode}`);
+	  
+		  await this.verifyService.addVerifyJob({
+			code,
+			email: email.toLowerCase(),
+		  });
+	  
+		  return 'auths.send code successfully';
+		} catch (error) {
+		  console.error('Error in getCode:', error);
+		  throw new NotFoundException('auths.error happens');
+		}
+	  }
+
+	  async verifyCode({ email, code }: VerifyCodeDto): Promise<User> {
+		const user = await this.usersService.findByEmail(email);
+		const redisKey = `${user.id}:code`;
+	  
+		const codeInRedis = await this.cacheService.get<string>(redisKey);
+		console.log(`--- VERIFY CODE ---`);
+		console.log(`Email: ${email}`);
+		console.log(`Redis Key: ${redisKey}`);
+		console.log(`Code in Redis: ${codeInRedis}`);
+		console.log(`Provided Code: ${code}`);
+	  
+		if (!codeInRedis || code.toString() !== codeInRedis.toString()) {
+		  throw new UnauthorizedException('auths.Invalid code');
+		}
+	  
+	  
+		if (user.status === EStatusUser.ACTIVE) {
+		  return user;
+		}
+	  
+		const updatedUser = await this.usersService.updateUser({
+		  status: EStatusUser.ACTIVE,
+		}, user);
+	  
+		return updatedUser;
+	  }
+	  
+	  
 	
 	  async logout(userId: string) {
 		return this.usersService.update(userId, { refreshToken: null });

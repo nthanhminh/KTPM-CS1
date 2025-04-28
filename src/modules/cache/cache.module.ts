@@ -12,6 +12,7 @@ import { CacheService } from './cache.service';
           host: 'localhost',
           port: 6379,
         },
+        ttl: 0
       }),
       isGlobal: true,
     }),

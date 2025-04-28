@@ -9,6 +9,7 @@ import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy
 import { SharedModule } from '@modules/shared/shared.module';
 import { UserModule } from '@modules/users/user.module';
 import { VerifyModule } from '@modules/queue/verify.module';
+import { RedisCacheModule } from '@modules/cache/cache.module';
 
 @Module({
 	imports: [
@@ -18,6 +19,7 @@ import { VerifyModule } from '@modules/queue/verify.module';
 		// MailModule,
 		VerifyModule,
 		SharedModule,
+		RedisCacheModule
 	],
 	controllers: [AuthController],
 	providers: [

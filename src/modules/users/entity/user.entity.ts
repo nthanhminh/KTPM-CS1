@@ -1,4 +1,4 @@
-import { ERolesUser } from '../enums/index.enum';
+import { ERolesUser, EStatusUser } from '../enums/index.enum';
 import { HydratedDocument } from 'mongoose';
 import { BaseEntity } from '@modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
@@ -22,6 +22,9 @@ export class User extends BaseEntity {
 
   @Prop({ enum: ERolesUser, default: ERolesUser.USER })
   role: ERolesUser;
+
+  @Prop({ enum: EStatusUser, default: EStatusUser.INACTIVE })
+  status: EStatusUser;
 
   @Prop()
   email: string;

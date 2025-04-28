@@ -10,9 +10,9 @@ export class CacheService {
     return await this.cacheManager.get<T>(key);
   }
 
-  async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
-    if (ttlSeconds) {
-      await this.cacheManager.set(key, value, ttlSeconds);
+  async set<T>(key: string, value: T, ttlMiliSeconds?: number): Promise<void> {
+    if (typeof ttlMiliSeconds === 'number' && ttlMiliSeconds > 0) {
+      await this.cacheManager.set(key, value, ttlMiliSeconds);
     } else {
       await this.cacheManager.set(key, value, 0);
     }

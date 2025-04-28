@@ -5,20 +5,41 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nestjs-app
+    container_name: nestjs-app-1
     ports:
-      - "8080:8080"
+      - "8080"  # Port trong container, sẽ không expose ngoài
     environment:
       - NODE_ENV=development
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/nestjs?authSource=admin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - ZOOKEEPER_HOST=zoo # Sử dụng tên service là zoo
+      - ZOOKEEPER_HOST=zoo
       - ZOOKEEPER_PORT=2181
     depends_on:
       - mongodb
       - redis
-      - zoo # Đảm bảo rằng dịch vụ này đã sẵn sàng
+      - zoo
+    networks:
+      - app-network
+
+  app_2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs-app-2
+    ports:
+      - "8081"  # Sử dụng một port khác ngoài 8080
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/nestjs?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ZOOKEEPER_HOST=zoo
+      - ZOOKEEPER_PORT=2181
+    depends_on:
+      - mongodb
+      - redis
+      - zoo
     networks:
       - app-network
 
@@ -48,9 +69,22 @@ services:
 
   zoo:
     image: zookeeper:latest
-    container_name: zoo # Đặt tên container là zoo
+    container_name: zoo
     ports:
       - "2182:2181"
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-loadbalancer
+    ports:
+      - "80:80"  # Đảm bảo Nginx sẽ lắng nghe tại port 80 trên host
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Tải file cấu hình Nginx từ máy chủ
+    depends_on:
+      - app
+      - app_2
     networks:
       - app-network
 

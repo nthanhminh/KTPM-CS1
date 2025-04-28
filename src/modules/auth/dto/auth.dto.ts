@@ -5,11 +5,6 @@ export class AuthDto {
     @ApiProperty({
         required: true,
     })
-    name: string
-
-    @ApiProperty({
-        required: true,
-    })
     email: string
 
     @ApiProperty({
