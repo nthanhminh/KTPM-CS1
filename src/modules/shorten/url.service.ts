@@ -56,8 +56,12 @@ export class UrlService {
     async createCustomizeLink(dto: CreateNewCustomizedUrl) {
         const { url, customizedEnpoint } = dto;
     
-        if (this.bloomService.mightContain(customizedEnpoint)) {
-          throw new UnprocessableEntityException('Url is used');
+        if (!this.bloomService.mightContain(customizedEnpoint)) {
+            try {
+                return await this.createNewShortenUrl(customizedEnpoint, url);
+            } catch (error) {
+                throw new UnprocessableEntityException('Error happened when creating new URL');
+            }
         }
     
         const checkFromRedis = await this.cacheService.get<string>(customizedEnpoint);
@@ -68,12 +72,6 @@ export class UrlService {
         const urlObject = await this.findOneByShortLink(customizedEnpoint);
         if (urlObject) {
           throw new UnprocessableEntityException('Url is used');
-        }
-    
-        try {
-          return await this.createNewShortenUrl(customizedEnpoint, url);
-        } catch (error) {
-          throw new UnprocessableEntityException('Error happened when creating new URL');
         }
     }
 

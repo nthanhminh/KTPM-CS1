@@ -116,7 +116,7 @@ export class AuthService {
 		  console.log(`Redis Key: ${redisKey}`);
 		  console.log(`Generated Code: ${code}`);
 	  
-		  await this.cacheService.set<string>(redisKey, code, 30000); // TTL 5 phút
+		  await this.cacheService.set<string>(redisKey, code, 300000); // TTL 5 phút
 	  
 		  const confirmCode = await this.cacheService.get<string>(redisKey);
 		  console.log(`Saved Code In Redis: ${confirmCode}`);

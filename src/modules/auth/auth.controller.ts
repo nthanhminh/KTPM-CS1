@@ -20,8 +20,9 @@ import { User } from '@modules/users/entity/user.entity';
 import { CreateNewUserDto } from '@modules/users/dto/createNewUser.dto';
 import { JwtRefreshTokenGuard } from './guards/jwt-refresh-token.guard';
 import { VerifyService } from '@modules/queue/verify.service';
-import { VerifyCodeDto } from './dto/senCode.dto';
+import { SendCodeDto, VerifyCodeDto } from './dto/senCode.dto';
 import { AppResponse } from 'src/types/common.type';
+import { EmailDto } from 'src/common/dto/email.dto';
   
   @ApiTags('auth')
   @Controller('auth')
@@ -76,8 +77,15 @@ import { AppResponse } from 'src/types/common.type';
 	  return this.authService.refreshTokens(userId, refreshToken);
 	}
   
+	@Post('verify')
+	async verifyCode(@Body() dto: SendCodeDto) : Promise<AppResponse<any>> {
+		return {
+			data: await this.authService.getCode(dto)
+		}
+	}
+
 	@Post('verifyCode')
-	async verifyCode(@Body() dto: VerifyCodeDto) : Promise<AppResponse<User>> {
+	async confirmVerifyCode(@Body() dto: VerifyCodeDto) : Promise<AppResponse<User>> {
 		console.log(dto.code)
 		return {
 			data: await this.authService.verifyCode(dto)
