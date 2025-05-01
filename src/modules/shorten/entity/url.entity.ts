@@ -23,6 +23,9 @@ export class Url extends BaseEntity {
 
     @Prop({ type: Date, expires: 0, required: true })
     expiresAt: Date;
+
+    @Prop({ required: true })
+    userId: string
 }
 
 export const UrlSchema = SchemaFactory.createForClass(Url);

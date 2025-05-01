@@ -7,6 +7,9 @@ import { CacheService } from '@modules/cache/cache.service';
 import { ConfigService } from '@nestjs/config';
 import { Connection } from 'mongoose';
 import { BloomFilterService } from './bloom_filter.service';
+import { User } from '@modules/users/entity/user.entity';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { getSkipLimit } from 'src/helper/pagination.helper';
 
 @Injectable()
 export class UrlService {
@@ -32,33 +35,34 @@ export class UrlService {
         return shortCode;
     }
     
-    async createNewShortenUrl(shortenUrl: string, originUrl: string) {
+    async createNewShortenUrl(shortenUrl: string, originUrl: string, userId: string) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         await this.cacheService.set<string>(shortenUrl, originUrl);
         try {
-            return await this.createUrl(shortenUrl, originUrl, expiresAt);
+            return await this.createUrl(shortenUrl, originUrl, expiresAt, userId);
         } catch (error) {
+            console.log(error)
             throw new UnprocessableEntityException("Error happens when creating new URL");
         }
     }
 
-    async insert(dto: CreateUrlDto) : Promise<Url> {
+    async insert(dto: CreateUrlDto, user: User) : Promise<Url> {
         const {url} = dto;
         const shortenUrl = this.createShortLink();
         try {
-            return await this.createNewShortenUrl(shortenUrl, url);
+            return await this.createNewShortenUrl(shortenUrl, url, user._id.toString());
         } catch (error) {
             throw new UnprocessableEntityException("Error happens when creating new URL");
         }
     }
 
-    async createCustomizeLink(dto: CreateNewCustomizedUrl) {
+    async createCustomizeLink(dto: CreateNewCustomizedUrl, user: User) {
         const { url, customizedEnpoint } = dto;
     
         if (!this.bloomService.mightContain(customizedEnpoint)) {
             try {
-                return await this.createNewShortenUrl(customizedEnpoint, url);
+                return await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
             } catch (error) {
                 throw new UnprocessableEntityException('Error happened when creating new URL');
             }
@@ -119,7 +123,7 @@ export class UrlService {
         }
     }
 
-    private async createUrl(shortenUrl: string, url: string, expiresAt: Date) {
+    private async createUrl(shortenUrl: string, url: string, expiresAt: Date, userId: string) {
         const session = await this.urlRepository.startTransaction();
 
         try {
@@ -128,6 +132,7 @@ export class UrlService {
                     longUrl: url,
                     shortUrl: shortenUrl,
                     expiresAt: expiresAt.toISOString(),
+                    userId: userId
                 }],
                 { session }
             );
@@ -137,9 +142,36 @@ export class UrlService {
             return newUrl;
         } catch (error) {
             await session.abortTransaction();
+            console.log(error)
             throw error;
         } finally {
             session.endSession();
         }
+    }
+
+    async getUrlHistory(dto: PaginationDto, user: User) : Promise<Url[]> {
+        const { page, pageSize } = dto;
+        const { $limit, $skip } = getSkipLimit({ page, pageSize });
+    
+        const urls = await this.urlRepository.findByAggregate([
+            {
+                $match: {
+                    userId: user._id.toString(),
+                },
+            },
+            {
+                $sort: {
+                    createdAt: -1,
+                },
+            },
+            {
+                $skip,
+            },
+            {
+                $limit,
+            },
+        ]);
+
+        return urls;
     }
 }
