@@ -29,7 +29,7 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
 		const user = await this.userService.findUserById(sub);
 
 		if (!user) {
-		throw new NotFoundException('user not found');
+			throw new NotFoundException('user not found');
 		}
 
 		return user; 

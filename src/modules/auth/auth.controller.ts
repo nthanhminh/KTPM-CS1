@@ -63,18 +63,18 @@ import { EmailDto } from 'src/common/dto/email.dto';
 	@UseGuards(JwtRefreshTokenGuard)
 	@Get('refresh')
 	@ApiOperation({ summary: 'Refresh tokens using the refresh token' })
-	@ApiBearerAuth()
+	@ApiBearerAuth('refreshToken')
 	@ApiResponse({
 	  status: 200,
 	  description: 'User successfully signed in.',
 	  type: AuthResponseDto,
 	})
 	@ApiResponse({ status: 400, description: 'Bad request.' })
-	refreshTokens(@CurrentUserDecorator() user:User) {
-	  const userId = user.id;
-	  const refreshToken = user.refreshToken;
-	  console.log(userId, refreshToken);
-	  return this.authService.refreshTokens(userId, refreshToken);
+	async refreshTokens(@CurrentUserDecorator() user:User) : Promise<AppResponse<{accessToken: string}>> {
+	  const userId = user._id.toString();
+	  return {
+		data: await this.authService.refreshTokens(userId)
+	  };
 	}
   
 	@Post('verify')

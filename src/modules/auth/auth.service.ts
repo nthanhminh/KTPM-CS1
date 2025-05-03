@@ -174,17 +174,19 @@ export class AuthService {
 		return randomString;
 	  }
 	
-	  hashData(data: string) {
+	async hashData(data: string) {
 		return argon2.hash(data);
-	  }
+	}
 	
 	//   async verifyEmail(token: string) {
 	// 	const user = await this.usersService.findByToken(token);
 	// 	return user != undefined;
 	//   }
 	
-	  async updateRefreshToken(userId: string, refreshToken: string) {
+	async updateRefreshToken(userId: string, refreshToken: string) {
 		const hashedRefreshToken = await this.hashData(refreshToken);
+		const check = await argon2.verify(hashedRefreshToken, refreshToken);
+		console.log("Hello check", check);
 		await this.usersService.update(userId, {
 		  refreshToken: hashedRefreshToken,
 		});
@@ -221,19 +223,15 @@ export class AuthService {
 		};
 	  }
 	
-	  async refreshTokens(userId: string, refreshToken: string) {
+	async refreshTokens(userId: string) : Promise<{accessToken: string}> {
 		const user = await this.usersService.findUserById(userId);
 		if (!user || !user.refreshToken)
 		  throw new ForbiddenException('Access Denied');
-		const refreshTokenMatches = await argon2.verify(
-		  user.refreshToken,
-		  refreshToken,
-		);
-		if (!refreshTokenMatches) throw new ForbiddenException('Access Denied');
 		const tokens = await this.getTokens(user.id, user.name, user.role);
-		await this.updateRefreshToken(user.id, tokens.refreshToken);
-		return tokens;
-	  }
+		return {
+			accessToken: tokens.accessToken
+		};
+	}
 
 	async getUserIfRefreshTokenMatched(userId: string, uuidRefreshToken: string) {
 		const user =  await this.usersService.findUserById(userId);
