@@ -57,12 +57,14 @@ export class UrlService {
         }
     }
 
-    async createCustomizeLink(dto: CreateNewCustomizedUrl, user: User) {
+    async createCustomizeLink(dto: CreateNewCustomizedUrl, user: User) : Promise<Url> {
         const { url, customizedEnpoint } = dto;
     
         if (!this.bloomService.mightContain(customizedEnpoint)) {
             try {
-                return await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
+                const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
+                this.bloomService.add(customizedEnpoint);
+                return newUrl;
             } catch (error) {
                 throw new UnprocessableEntityException('Error happened when creating new URL');
             }
@@ -76,6 +78,14 @@ export class UrlService {
         const urlObject = await this.findOneByShortLink(customizedEnpoint);
         if (urlObject) {
           throw new UnprocessableEntityException('Url is used');
+        }
+
+        try {
+            const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
+            this.bloomService.add(customizedEnpoint);
+            return newUrl;
+        } catch (error) {
+            throw new UnprocessableEntityException('Error happened when creating new URL');
         }
     }
 
