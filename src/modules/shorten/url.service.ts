@@ -96,6 +96,9 @@ export class UrlService {
 
     async deleteUrl(id: string, user: User) : Promise<boolean> {
         const url = await this.urlRepository.findOneById(id);
+        if(!url) {
+            throw new NotFoundException("Url not found");
+        }
         if(url.userId.toString() != user._id.toString()) {
             throw new ForbiddenException("You don't have permission to delete this item");
         }
@@ -179,6 +182,7 @@ export class UrlService {
             {
                 $match: {
                     userId: user._id.toString(),
+                    deletedAt: null
                 },
             },
             {
