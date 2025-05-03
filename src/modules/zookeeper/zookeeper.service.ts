@@ -45,30 +45,33 @@ export class ZookeeperService implements OnModuleInit {
     });
   }
 
-  private allocateIdBlock() {
-    // Lấy giá trị counter hiện tại từ ZooKeeper
+  private allocateIdBlock(retryCount = 0) {
+    if (retryCount > 5) {
+      console.error('Max retry attempts reached for allocateIdBlock');
+      return;
+    }
+  
     this.client.getData(COUNTER_PATH, (err, data, stat) => {
       if (err) return console.error('Error getting data:', err);
-
+  
       const current = parseInt(data.toString());
       const next = current + BLOCK_SIZE;
-
-      // Cập nhật counter trong ZooKeeper
+  
       this.client.setData(COUNTER_PATH, Buffer.from(next.toString()), stat.version, (err) => {
         if (err) {
-          console.error('Race condition when setting counter, retrying...');
-          setTimeout(() => this.allocateIdBlock(), 100);  // Thử lại nếu gặp vấn đề race condition
+          console.error(`Race condition detected (retry #${retryCount + 1})`);
+          setTimeout(() => this.allocateIdBlock(retryCount + 1), 100 * (retryCount + 1)); // Exponential backoff
           return;
         }
-
+  
         this.currentStartId = current;
         this.currentEndId = next - 1;
         this.localCounter = current;
-
+  
         console.log(`✅ Instance ID block: ${this.currentStartId} - ${this.currentEndId}`);
       });
     });
-  }
+  }  
 
   public getNextId(): number {
     // Kiểm tra nếu counter đã hết block, ném lỗi

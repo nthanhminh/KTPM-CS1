@@ -7,7 +7,7 @@ import { UrlService } from "./url.service";
 import { UrlController } from "./url.controller";
 import { UrlRepository } from "@repositories/url.repository";
 import { RedisCacheModule } from "@modules/cache/cache.module";
-import { BloomFilterService } from "./bloom_filter.service";
+import { BloomModule } from "@modules/redis_bloom/redis_bloom.module";
 
 @Module({
     imports:[
@@ -19,12 +19,12 @@ import { BloomFilterService } from "./bloom_filter.service";
         ]),
         SharedModule,
         RedisCacheModule,
-        ZookeeperModule
+        ZookeeperModule,
+        BloomModule,
     ],
     providers: [
         UrlService,
         { provide: 'UrlRepositoryInterface', useClass: UrlRepository },
-        BloomFilterService
     ],
     controllers: [UrlController]
 })

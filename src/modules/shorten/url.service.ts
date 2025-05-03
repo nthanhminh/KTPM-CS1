@@ -1,15 +1,14 @@
-import { Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { ZookeeperService } from '../zookeeper/zookeeper.service';
 import { UrlRepository } from '@repositories/url.repository';
 import { CreateNewCustomizedUrl, CreateUrlDto } from './dto/createUrl.dto';
 import { Url } from './entity/url.entity';
 import { CacheService } from '@modules/cache/cache.service';
 import { ConfigService } from '@nestjs/config';
-import { Connection } from 'mongoose';
-import { BloomFilterService } from './bloom_filter.service';
 import { User } from '@modules/users/entity/user.entity';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { getSkipLimit } from 'src/helper/pagination.helper';
+import { RedisBloomService } from '@modules/redis_bloom/redis_bloom.service';
 
 @Injectable()
 export class UrlService {
@@ -20,7 +19,7 @@ export class UrlService {
         private readonly urlRepository: UrlRepository,      
         private readonly cacheService: CacheService,
         private readonly configService: ConfigService,
-        private readonly bloomService: BloomFilterService
+        private readonly redisBloomService: RedisBloomService
     ) {
         const secret = this.configService.get<number>('SECRET_NUMBER')
         console.log(secret, "This is a secret number");
@@ -59,11 +58,13 @@ export class UrlService {
 
     async createCustomizeLink(dto: CreateNewCustomizedUrl, user: User) : Promise<Url> {
         const { url, customizedEnpoint } = dto;
-    
-        if (!this.bloomService.mightContain(customizedEnpoint)) {
+
+        const checkFromBloom = await this.redisBloomService.exists('urlAlias', customizedEnpoint);
+
+        if(!checkFromBloom) {
             try {
                 const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
-                this.bloomService.add(customizedEnpoint);
+                this.redisBloomService.add('urlAlias', customizedEnpoint);
                 return newUrl;
             } catch (error) {
                 throw new UnprocessableEntityException('Error happened when creating new URL');
@@ -82,7 +83,7 @@ export class UrlService {
 
         try {
             const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
-            this.bloomService.add(customizedEnpoint);
+            this.redisBloomService.add('urlAlias', customizedEnpoint);
             return newUrl;
         } catch (error) {
             throw new UnprocessableEntityException('Error happened when creating new URL');
@@ -91,6 +92,14 @@ export class UrlService {
 
     async get(longUrl: string) : Promise<Url> {
         return await this.urlRepository.findOneByCondition({longUrl: longUrl});
+    }
+
+    async deleteUrl(id: string, user: User) : Promise<boolean> {
+        const url = await this.urlRepository.findOneById(id);
+        if(url.userId.toString() != user._id.toString()) {
+            throw new ForbiddenException("You don't have permission to delete this item");
+        }
+        return await this.urlRepository.softDelete(id);
     }
 
     async getLongUrlFromShortenUrl(shortenUrl: string) : Promise<string> {
@@ -159,29 +168,47 @@ export class UrlService {
         }
     }
 
-    async getUrlHistory(dto: PaginationDto, user: User) : Promise<Url[]> {
+    async getUrlHistory(dto: PaginationDto, user: User) : Promise<{
+        urls: Url[],
+        totalPages: number
+    }> {
         const { page, pageSize } = dto;
         const { $limit, $skip } = getSkipLimit({ page, pageSize });
     
-        const urls = await this.urlRepository.findByAggregate([
+        const result = await this.urlRepository.findByAggregate([
             {
                 $match: {
                     userId: user._id.toString(),
                 },
             },
             {
-                $sort: {
-                    createdAt: -1,
+                $facet: {
+                    totalCount: [
+                        {
+                            $count: 'total',
+                        },
+                    ],
+                    urls: [
+                        {
+                            $sort: { createdAt: -1 },
+                        },
+                        {
+                            $skip,
+                        },
+                        {
+                            $limit,
+                        },
+                    ],
                 },
-            },
-            {
-                $skip,
-            },
-            {
-                $limit,
             },
         ]);
 
-        return urls;
+        const totalCount = result[0]?.totalCount[0]?.total || 0;
+        const totalPages = Math.ceil(totalCount / pageSize);
+
+        return { 
+            urls: result[0]?.urls || [], 
+            totalPages 
+        };
     }
 }

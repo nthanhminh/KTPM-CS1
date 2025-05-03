@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Query, Redirect, Res, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Query, Redirect, Res, UseGuards, UseInterceptors } from "@nestjs/common";
 import { UrlService } from "./url.service";
 import { CreateNewCustomizedUrl, CreateUrlDto } from "./dto/createUrl.dto";
 import { AppResponse } from "src/types/common.type";
@@ -46,9 +46,21 @@ export class UrlController {
     async getUrlHistory(
         @Query() dto: PaginationDto,
         @CurrentUserDecorator() user: User
-    ) : Promise<AppResponse<Url[]>> {
+    ) : Promise<AppResponse<{
+        urls: Url[],
+        totalPages: number
+    }>> {
         return {
             data: await this.urlService.getUrlHistory(dto, user)
+        }
+    }
+
+    @ApiBearerAuth('token')
+    @UseGuards(JwtAccessTokenGuard)
+    @Delete(':id')
+    async deleteUrl(@Param('id') id: string, @CurrentUserDecorator() user: User) : Promise<AppResponse<boolean>> {
+        return {
+            data: await this.urlService.deleteUrl(id, user)
         }
     }
 
