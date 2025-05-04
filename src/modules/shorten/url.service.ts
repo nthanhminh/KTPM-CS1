@@ -64,7 +64,7 @@ export class UrlService {
         if(!checkFromBloom) {
             try {
                 const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
-                this.redisBloomService.add('urlAlias', customizedEnpoint);
+                await this.redisBloomService.add('urlAlias', customizedEnpoint);
                 await this.cacheService.set<string>(customizedEnpoint, url, 86400000);
                 return newUrl;
             } catch (error) {
@@ -84,7 +84,7 @@ export class UrlService {
 
         try {
             const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
-            this.redisBloomService.add('urlAlias', customizedEnpoint);
+            await this.redisBloomService.add('urlAlias', customizedEnpoint);
             await this.cacheService.set<string>(customizedEnpoint, url, 86400000);
             return newUrl;
         } catch (error) {
@@ -164,6 +164,8 @@ export class UrlService {
             );
 
             await session.commitTransaction();
+
+            await this.redisBloomService.add('urlAlias', shortenUrl);
 
             return newUrl;
         } catch (error) {
