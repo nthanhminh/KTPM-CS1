@@ -25,20 +25,19 @@ export class ZookeeperService implements OnModuleInit {
     this.client.connect();
   }
 
-  private initializeCounter() {
-    this.client.exists(COUNTER_PATH, async (err, stat) => {
-      if (err) return console.error('Error checking path:', err);
-
-      if (!stat) {
-        console.log(`Node ${COUNTER_PATH} không tồn tại, sẽ tạo mới.`);
-        this.client.create(COUNTER_PATH, Buffer.from('0'), async (err) => {
-          if (err) return console.error('Error creating counter node:', err);
-          await this.allocateIdBlock();
-        });
+  private async initializeCounter() {
+    this.client.create(COUNTER_PATH, Buffer.from('0'), async (err) => {
+      if (err) {
+        if (err.getCode && err.getCode() === zookeeper.Exception.NODE_EXISTS) {
+          console.log(`Node ${COUNTER_PATH} đã tồn tại.`);
+        } else {
+          return console.error('Error creating counter node:', err);
+        }
       } else {
-        console.log(`Node ${COUNTER_PATH} đã tồn tại.`);
-        await this.allocateIdBlock();
+        console.log(`Node ${COUNTER_PATH} không tồn tại, đã tạo mới.`);
       }
+  
+      await this.allocateIdBlock();
     });
   }
 

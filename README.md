@@ -26,11 +26,15 @@ docker compose up --build -d
 
 ```
 
+## Cách triển khai
+
+Cách triển khai chi tiết được trình bày trong báo cáo dưới đây.
+
+Báo cáo: [Báo cáo](https://drive.google.com/file/d/1lQ2i6yCbkzinb4crpFuIkFeWHLt4qOhx/view)
+
 ## Link liên quan
 
 Front End Repository: https://github.com/Ng-Vanh/url-shortener
-
-Báo cáo: [Báo cáo](https://drive.google.com/file/d/1lQ2i6yCbkzinb4crpFuIkFeWHLt4qOhx/view)
 
 ## Demo trang web
 1. Giao diện Dashboard
