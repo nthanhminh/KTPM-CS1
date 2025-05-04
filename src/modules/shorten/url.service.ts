@@ -37,7 +37,7 @@ export class UrlService {
     async createNewShortenUrl(shortenUrl: string, originUrl: string, userId: string) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await this.cacheService.set<string>(shortenUrl, originUrl);
+        await this.cacheService.set<string>(shortenUrl, originUrl, 86400000);
         try {
             return await this.createUrl(shortenUrl, originUrl, expiresAt, userId);
         } catch (error) {
@@ -65,6 +65,7 @@ export class UrlService {
             try {
                 const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
                 this.redisBloomService.add('urlAlias', customizedEnpoint);
+                await this.cacheService.set<string>(customizedEnpoint, url, 86400000);
                 return newUrl;
             } catch (error) {
                 throw new UnprocessableEntityException('Error happened when creating new URL');
@@ -84,6 +85,7 @@ export class UrlService {
         try {
             const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
             this.redisBloomService.add('urlAlias', customizedEnpoint);
+            await this.cacheService.set<string>(customizedEnpoint, url, 86400000);
             return newUrl;
         } catch (error) {
             throw new UnprocessableEntityException('Error happened when creating new URL');
@@ -102,6 +104,7 @@ export class UrlService {
         if(url.userId.toString() != user._id.toString()) {
             throw new ForbiddenException("You don't have permission to delete this item");
         }
+        await this.cacheService.delete(url.shortUrl);
         return await this.urlRepository.softDelete(id);
     }
 
@@ -115,6 +118,7 @@ export class UrlService {
         console.log("Cache miss");
         try {
             const urlObject = await this.findOneByShortLink(shortenUrl);
+            await this.cacheService.set<string>(urlObject.shortUrl, urlObject.longUrl, 86400000);
             return urlObject.longUrl;
         } catch (error) {
             throw new NotFoundException("Url not found");
