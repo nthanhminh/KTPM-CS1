@@ -1,29 +1,29 @@
 import { Module } from '@nestjs/common';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-ioredis';
+import { createClient } from 'redis'; 
+import { ConfigModule, ConfigService } from '@nestjs/config'; 
 import { CacheService } from './cache.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
-  imports: [
-    CacheModule.registerAsync({
+  imports: [ConfigModule], 
+  providers: [
+    {
+      provide: 'REDIS_CLIENT',
       useFactory: async (configService: ConfigService) => {
-        const redisHost = configService.get<string>('REDIS_HOST');
-        const redisPort = configService.get<number>('REDIS_PORT', 6379);
-        return {
-          store: redisStore,
-          socket: {
-            host: redisHost,
-            port: redisPort,
-          },
-          ttl: 0
-        }
+        const redisUrl = configService.get<string>('REDIS_URL'); 
+        const client = createClient({ url: redisUrl });
+        client.on('connect', () => console.log('🔌 Redis is connecting...'));
+        client.on('ready', () => console.log('✅ Redis connection is ready.'));
+        client.on('error', (err) => console.error('❌ Redis error:', err));
+        client.on('end', () => console.log('🛑 Redis connection closed.'));
+        client.on('reconnecting', () => console.log('♻️ Redis reconnecting...'));
+        await client.connect();
+        return client;
       },
-      isGlobal: true,
-      inject: [ConfigService]
-    }),
+      inject: [ConfigService], 
+    },
+    CacheService
   ],
-  providers: [CacheService],
-  exports: [CacheService]
+  controllers: [],
+  exports: ['REDIS_CLIENT', CacheService],
 })
 export class RedisCacheModule {}

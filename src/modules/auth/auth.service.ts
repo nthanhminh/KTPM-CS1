@@ -116,9 +116,9 @@ export class AuthService {
 		  console.log(`Redis Key: ${redisKey}`);
 		  console.log(`Generated Code: ${code}`);
 	  
-		  await this.cacheService.set<string>(redisKey, code, 300000); // TTL 5 phút
+		  await this.cacheService.setCache(redisKey, code, 300); // TTL 5 phút
 	  
-		  const confirmCode = await this.cacheService.get<string>(redisKey);
+		  const confirmCode = await this.cacheService.getCache(redisKey);
 		  console.log(`Saved Code In Redis: ${confirmCode}`);
 	  
 		  await this.verifyService.addVerifyJob({
@@ -137,7 +137,7 @@ export class AuthService {
 		const user = await this.usersService.findByEmail(email);
 		const redisKey = `${user.id}:code`;
 	  
-		const codeInRedis = await this.cacheService.get<string>(redisKey);
+		const codeInRedis = await this.cacheService.getCache(redisKey);
 		console.log(`--- VERIFY CODE ---`);
 		console.log(`Email: ${email}`);
 		console.log(`Redis Key: ${redisKey}`);

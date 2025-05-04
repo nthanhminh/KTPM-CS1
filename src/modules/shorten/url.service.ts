@@ -37,7 +37,7 @@ export class UrlService {
     async createNewShortenUrl(shortenUrl: string, originUrl: string, userId: string) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await this.cacheService.set<string>(shortenUrl, originUrl, 86400000);
+        await this.cacheService.setCache(shortenUrl, originUrl, 86400);
         try {
             return await this.createUrl(shortenUrl, originUrl, expiresAt, userId);
         } catch (error) {
@@ -65,14 +65,14 @@ export class UrlService {
             try {
                 const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
                 await this.redisBloomService.add('urlAlias', customizedEnpoint);
-                await this.cacheService.set<string>(customizedEnpoint, url, 86400000);
+                await this.cacheService.setCache(customizedEnpoint, url, 86400);
                 return newUrl;
             } catch (error) {
                 throw new UnprocessableEntityException('Error happened when creating new URL');
             }
         }
     
-        const checkFromRedis = await this.cacheService.get<string>(customizedEnpoint);
+        const checkFromRedis = await this.cacheService.getCache(customizedEnpoint);
         if (checkFromRedis) {
           throw new UnprocessableEntityException('Url is used');
         }
@@ -85,7 +85,7 @@ export class UrlService {
         try {
             const newUrl = await this.createNewShortenUrl(customizedEnpoint, url, user._id.toString());
             await this.redisBloomService.add('urlAlias', customizedEnpoint);
-            await this.cacheService.set<string>(customizedEnpoint, url, 86400000);
+            await this.cacheService.setCache(customizedEnpoint, url, 86400);
             return newUrl;
         } catch (error) {
             throw new UnprocessableEntityException('Error happened when creating new URL');
@@ -104,12 +104,12 @@ export class UrlService {
         if(url.userId.toString() != user._id.toString()) {
             throw new ForbiddenException("You don't have permission to delete this item");
         }
-        await this.cacheService.delete(url.shortUrl);
+        await this.cacheService.deleteCache(url.shortUrl);
         return await this.urlRepository.softDelete(id);
     }
 
     async getLongUrlFromShortenUrl(shortenUrl: string) : Promise<string> {
-        const longUrl: string | null = await this.cacheService.get<string>(shortenUrl);
+        const longUrl: string | null = await this.cacheService.getCache(shortenUrl);
         if(longUrl) {
             console.log("Cache hit")
             console.log(`longUrl ${longUrl}`);
@@ -118,7 +118,7 @@ export class UrlService {
         console.log("Cache miss");
         try {
             const urlObject = await this.findOneByShortLink(shortenUrl);
-            await this.cacheService.set<string>(urlObject.shortUrl, urlObject.longUrl, 86400000);
+            await this.cacheService.setCache(urlObject.shortUrl, urlObject.longUrl, 86400);
             return urlObject.longUrl;
         } catch (error) {
             throw new NotFoundException("Url not found");
