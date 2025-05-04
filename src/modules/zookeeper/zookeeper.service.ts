@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as zookeeper from 'node-zookeeper-client';
 
 const COUNTER_PATH = '/shorten-id-counter';
-const BLOCK_SIZE = 1000;
+const BLOCK_SIZE = 1000000000;
 
 @Injectable()
 export class ZookeeperService implements OnModuleInit {
@@ -18,7 +18,7 @@ export class ZookeeperService implements OnModuleInit {
 
   async onModuleInit() {
     this.client.once('connected', () => {
-      console.log('🦓 Connected to ZooKeeper');
+      console.log('Connected to ZooKeeper');
       this.initializeCounter();
     });
 
@@ -26,57 +26,59 @@ export class ZookeeperService implements OnModuleInit {
   }
 
   private initializeCounter() {
-    // Kiểm tra sự tồn tại của node
-    this.client.exists(COUNTER_PATH, (err, stat) => {
+    this.client.exists(COUNTER_PATH, async (err, stat) => {
       if (err) return console.error('Error checking path:', err);
 
       if (!stat) {
-        // Nếu node không tồn tại, khởi tạo node mới
         console.log(`Node ${COUNTER_PATH} không tồn tại, sẽ tạo mới.`);
-        this.client.create(COUNTER_PATH, Buffer.from('0'), (err) => {
+        this.client.create(COUNTER_PATH, Buffer.from('0'), async (err) => {
           if (err) return console.error('Error creating counter node:', err);
-          this.allocateIdBlock(); // Tạo block ID sau khi tạo node
+          await this.allocateIdBlock();
         });
       } else {
-        // Nếu node đã tồn tại, chỉ cần phân bổ block ID từ giá trị hiện tại
         console.log(`Node ${COUNTER_PATH} đã tồn tại.`);
-        this.allocateIdBlock();
+        await this.allocateIdBlock();
       }
     });
   }
 
-  private allocateIdBlock(retryCount = 0) {
+  private async allocateIdBlock(retryCount = 0): Promise<void> {
     if (retryCount > 5) {
       console.error('Max retry attempts reached for allocateIdBlock');
-      return;
+      throw new Error('Unable to allocate ID block');
     }
   
-    this.client.getData(COUNTER_PATH, (err, data, stat) => {
-      if (err) return console.error('Error getting data:', err);
+    return new Promise((resolve, reject) => {
+      this.client.getData(COUNTER_PATH, (err, data, stat) => {
+        if (err) return reject(err);
   
-      const current = parseInt(data.toString());
-      const next = current + BLOCK_SIZE;
+        const current = parseInt(data.toString());
+        const next = current + BLOCK_SIZE;
   
-      this.client.setData(COUNTER_PATH, Buffer.from(next.toString()), stat.version, (err) => {
-        if (err) {
-          console.error(`Race condition detected (retry #${retryCount + 1})`);
-          setTimeout(() => this.allocateIdBlock(retryCount + 1), 100 * (retryCount + 1)); // Exponential backoff
-          return;
-        }
+        this.client.setData(COUNTER_PATH, Buffer.from(next.toString()), stat.version, (err) => {
+          if (err) {
+            console.error(`Race condition detected (retry #${retryCount + 1})`);
+            setTimeout(() => {
+              this.allocateIdBlock(retryCount + 1).then(resolve).catch(reject);
+            }, 100 * (retryCount + 1)); 
+            return;
+          }
   
-        this.currentStartId = current;
-        this.currentEndId = next - 1;
-        this.localCounter = current;
+          this.currentStartId = current;
+          this.currentEndId = next - 1;
+          this.localCounter = current;
   
-        console.log(`✅ Instance ID block: ${this.currentStartId} - ${this.currentEndId}`);
+          console.log(`Instance ID block: ${this.currentStartId} - ${this.currentEndId}`);
+          resolve();
+        });
       });
     });
   }  
 
-  public getNextId(): number {
-    // Kiểm tra nếu counter đã hết block, ném lỗi
+  async getNextId(): Promise<number> {
     if (this.localCounter > this.currentEndId) {
-      throw new Error('ID block exhausted. Implement auto-reallocate if needed.');
+      console.log('ID block exhausted. Renewing...');
+      await this.allocateIdBlock();
     }
     return this.localCounter++;
   }

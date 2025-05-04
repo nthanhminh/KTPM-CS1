@@ -26,8 +26,8 @@ export class UrlService {
         this.secretNumber = secret;
     }
 
-    createShortLink(): string {
-        const id = this.zkService.getNextId();
+    async createShortLink(): Promise<string> {
+        const id = await this.zkService.getNextId();
         const encodedId = id ^ this.secretNumber;
         const shortCode = this.encodeBase62(encodedId);
         console.log("shortCode", shortCode, "EncodedId", encodedId)
@@ -48,7 +48,7 @@ export class UrlService {
 
     async insert(dto: CreateUrlDto, user: User) : Promise<Url> {
         const {url} = dto;
-        const shortenUrl = this.createShortLink();
+        const shortenUrl = await this.createShortLink();
         try {
             return await this.createNewShortenUrl(shortenUrl, url, user._id.toString());
         } catch (error) {

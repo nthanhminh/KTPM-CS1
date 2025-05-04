@@ -10,8 +10,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       useFactory: async (configService: ConfigService) => {
         const redisHost = configService.get<string>('REDIS_HOST');
         const redisPort = configService.get<number>('REDIS_PORT', 6379);
-        console.log('REDIS_HOST:', redisHost);
-        console.log('REDIS_PORT:', redisPort);
         return {
           store: redisStore,
           socket: {

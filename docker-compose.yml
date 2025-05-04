@@ -9,14 +9,6 @@ services:
     ports:
       - "8080"  
     environment:
-      - NODE_ENV=development
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/nestjs?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - ZOOKEEPER_HOST=zoo
-      - ZOOKEEPER_PORT=2181
-      - REDIS_BLOOM_HOST=redisbloom
-      - REDIS_BLOOM_PORT=6379
       - PORT=8080
     depends_on:
       - mongodb
@@ -34,14 +26,6 @@ services:
     ports:
       - "8081"  
     environment:
-      - NODE_ENV=development
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/nestjs?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - ZOOKEEPER_HOST=zoo
-      - ZOOKEEPER_PORT=2181
-      - REDIS_BLOOM_HOST=redisbloom
-      - REDIS_BLOOM_PORT=6379
       - PORT=8081
     depends_on:
       - mongodb
@@ -56,13 +40,11 @@ services:
     image: mongo:latest
     container_name: mongodb
     ports:
-      - "27017:27017"
+      - "27020:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
-      - MONGO_INITDB_DATABASE=nestjs
+      - MONGO_INITDB_DATABASE=shortUrl 
     networks:
       - app-network
 
@@ -70,7 +52,7 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379:6379"
+      - "6379"
     volumes:
       - redis_data:/data
     networks:
@@ -80,7 +62,7 @@ services:
     image: redislabs/rebloom:latest
     container_name: redisbloom
     ports:
-      - "6380:6379" 
+      - "6379" 
     volumes:
       - redisbloom_data:/data 
     networks:
@@ -90,7 +72,7 @@ services:
     image: zookeeper:latest
     container_name: zoo
     ports:
-      - "2182:2181"
+      - "2181"
     networks:
       - app-network
 

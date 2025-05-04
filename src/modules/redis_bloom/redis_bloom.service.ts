@@ -33,7 +33,7 @@ export class RedisBloomService {
         throw err;
       }
     } else {
-      this.logger.log(`Lock not acquired for filter init. Retrying...`);
+      this.logger.log(`Lock not acquired for filter init.`);
       await new Promise((resolve) => setTimeout(resolve, 100));
       return this.initFilterOnce(key, errorRate, capacity); 
     }
