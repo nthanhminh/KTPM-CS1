@@ -30,5 +30,20 @@ docker compose up --build -d
 
 Front End Repository: https://github.com/Ng-Vanh/url-shortener
 
-Báo cáo
+Báo cáo: [Báo cáo](https://drive.google.com/file/d/1lQ2i6yCbkzinb4crpFuIkFeWHLt4qOhx/view)
+
+## Demo trang web
+1. Giao diện Dashboard
+
+![Dashboard](./images/screen_short_1.png)
+
+2. Tuỳ chỉnh URL theo nhu cầu
+
+![Customize](./images/screen_short_2.png)
+
+3. Link rút gọn hoàn thành
+
+![Done](./images/screen_short_3.png)
+
+
 
