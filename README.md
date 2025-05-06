@@ -47,11 +47,11 @@ Giao diện web được xây dựng bằng Nextjs giúp gửi URL và nhận l�
 ### 1. Đánh giá sử dụng công cụ wrk
 Đây là kết quả đánh giá hiệu năng trong ví dụ mẫu (`wrk_1.jpg`)
 
-![wrk_1](.\images\wrk_1.jpg)
+![wrk_1](./images/wrk_1.jpg)
 
 Còn đây là kết quả đánh giá hiệu năng của phương pháp đề xuất (`wrk_2.jpg`)
 
-![wrk_2](.\images\wrk_2.jpg)
+![wrk_2](./images/wrk_2.jpg)
 
 So sánh kết quả benchmark giữa hai phiên bản (ảnh `wrk_1.jpg` và `wrk_2.jpg`) cho thấy rõ sự cải thiện vượt bậc trong `wrk_2.jpg` là cách triển khai rút gọn link đã đề cập. Với cùng cấu hình **4 threads và 1000 connections**, throughput tăng từ **148.88 req/s lên 312.30 req/s** (gấp hơn **2 lần**), trong khi **latency giảm từ 1.63s xuống 1.21s**.  
 
@@ -59,8 +59,8 @@ Với **10 000 connections**, hệ thống mới vẫn duy trì hiệu năng cao
 
 ### 2. Đánh giá sử dụng công cụ jmeter
 #### 2.1. Đánh giá chức năng tạo link rút gọn
-![jmeter_1-1](.\images\jmeter_1-1.png)
-![jmeter_1-2](.\images\jmeter_1-2.png)
+![jmeter_1-1](./images/jmeter_1-1.png)
+![jmeter_1-2](./images/jmeter_1-2.png)
 Tương tự ảnh 1 là kết quả đánh giá của phương pháp mẫu, còn 2 ảnh là kết quả đánh giá được trình bày trong bài tập lớn này. Cụ thể, ta có thể thấy:
 
 - Tỉ lệ lỗi (Error %) bằng 0%, cho thấy toàn bộ 5000 yêu cầu HTTP đều thành công — một minh chứng rõ ràng cho độ ổn định của hệ thống.
@@ -72,8 +72,8 @@ Tương tự ảnh 1 là kết quả đánh giá của phương pháp mẫu, cò
 - Lượng dữ liệu gửi và nhận tăng mạnh (Sent KB/sec: 80.65, Received KB/sec: 103.93), nghĩa là hiệu năng truyền tải cao hơn nhiều.
 
 #### 2.2. Đánh giá chức năng đọc link rút gọn
-![jmeter_2-1](.\images\jmeter_2-1.png)
-![jmeter_2-2](.\images\jmeter_2-2.png)
+![jmeter_2-1](./images/jmeter_2-1.png)
+![jmeter_2-2](./images/jmeter_2-2.png)
 Hai ảnh trên lần lượt là kết quả đánh giá hiệu năng của việc đọc link rút gọn của phương pháp mẫu và phương pháp mới đã được cải tiến. Với cấu hình **5000 connections** trong thời gian 30s, ta có thể thấy rõ ràng phương pháp mới tốt hơn, Cụ thể:
 - Tỉ lệ lỗi ở ảnh 1 là 8.34% còn trong ảnh 2 là 0%
 - Average ở ảnh 1 bằng 4, ảnh 2 bằng 5
