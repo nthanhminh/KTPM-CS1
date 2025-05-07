@@ -1,22 +1,22 @@
 # CASE STUDY 1: Bài tập nhóm Kiến trúc phần mềm
 
-## 🧑‍🤝‍🧑 Thành viên nhóm
+## 1. Thành viên nhóm
 
 1. Ngô Thành Minh - 22021131 
 2. Nguyễn Việt Anh - 22021162
 3. Nguyễn Thị Hoài Thu - 22021135
 
-## 📌 Mô tả dự án
+## 2. Mô tả dự án
 
 Dự án này nhằm mục đích triển khai hệ thống rút gọn link sử dụng mã hóa Base62 (sử dụng các kí tự A-Z, a-z, 0-9 để tạo ra link rút gọn), hỗ trợ mở rộng bằng Zookeeper, sử dụng hệ cơ sở dữ liệu MongoDB kết hợp cùng ODM Mongoose và tăng tốc truy xuất nhờ Redis và Bloom Filter. Hệ thống có giao diện web thân thiện, middleware ghi log, và được tối ưu hiệu suất để đáp ứng yêu cầu mở rộng và ổn định.
 
-## 🚀 Công nghệ sử dụng
+## 3. Công nghệ sử dụng
 
 - Frontend: NextJs
 - Backend: NestJS, Zookeeper, Redis, Redis Bloom, Mongooes, JWT.
 - Cơ sở dữ liệu: MongoDB
 
-## 📝 Hướng dẫn chạy dự án
+## 4. Hướng dẫn chạy dự án
 
 ```bash
 Download Docker
@@ -26,7 +26,7 @@ docker compose up --build -d
 
 ```
 
-## Cách triển khai
+## 5. Cách triển khai
 
 Cách triển khai chi tiết được trình bày trong báo cáo dưới đây.
 
@@ -42,7 +42,7 @@ Ngoài ra, ứng dụng triển khai middleware để ghi log toàn bộ request
 
 Giao diện web được xây dựng bằng Nextjs giúp gửi URL và nhận lại link rút gọn hoặc tùy chọn đuôi URL với độ dài từ 3 - 16 ký tự, sau đó hiển thị URL rút gọn kèm theo chức năng sao chép nhanh vào bộ nhớ tạm. Hệ thống cũng tích hợp cơ chế xử lý lỗi cơ bản nhằm thông báo cho người dùng khi đầu vào không hợp lệ. Bên cạnh đó, giao diện còn lưu lại lịch sử các URL đã được tạo, giúp người dùng dễ dàng truy xuất lại các liên kết trước đó.
 
-## Đánh giá hiệu năng
+## 6. Đánh giá hiệu năng
 
 ### 1. Đánh giá sử dụng công cụ wrk
 Đây là kết quả đánh giá hiệu năng trong ví dụ mẫu (`wrk_1.jpg`)
@@ -81,11 +81,11 @@ Hai ảnh trên lần lượt là kết quả đánh giá hiệu năng của vi�
 
 Từ đó thấy rằng phương pháp của nhóm thể hiện sự cải tiến rõ rệt về tính ổn định và độ chính xác.
 
-## Link liên quan
+## 7. Link liên quan
 
 Front End Repository: https://github.com/Ng-Vanh/url-shortener
 
-## Demo trang web
+## 8. Demo trang web
 1. Giao diện Dashboard
 
 ![Dashboard](./images/screen_short_1.png)
