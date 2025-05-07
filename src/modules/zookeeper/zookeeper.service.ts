@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as zookeeper from 'node-zookeeper-client';
 
 const COUNTER_PATH = '/shorten-id-counter';
-const BLOCK_SIZE = 1000000000;
+const BLOCK_SIZE = 1000000;
 
 @Injectable()
 export class ZookeeperService implements OnModuleInit {
