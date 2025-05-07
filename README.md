@@ -32,6 +32,10 @@ Cách triển khai chi tiết được trình bày trong báo cáo dưới đây
 
 Báo cáo: [Báo cáo](https://drive.google.com/file/d/1lQ2i6yCbkzinb4crpFuIkFeWHLt4qOhx/view)
 
+![kien_truc_he_thong](./images/kien_truc_he_thong.jpg)
+
+*Hình ảnh trên biểu diễn kiến trúc hệ thống đã triển khai trong bài tập lớn này.*
+
 Nhóm đã áp dụng phương pháp Encode Base62 kết hợp Zookeeper và Redis. Cụ thể là tạo ID duy nhất cho mỗi URL, ID tăng dần theo thứ tự. Sau đó thực hiện phép XOR ID với một secret number, kết quả thu được sẽ được chuyển sang hệ cơ số 62 ([0-9, a-z, A-Z], 62 ký tự), và giới hạn đầu ra ở 7 ký tự. Phương pháp này có thể tạo ra 3.5 nghìn tỷ link rút gọn.
 
 Phương pháp sử dụng ID duy nhất giúp loại bỏ việc kiểm tra trùng lặp khi tạo link rút gọn. Tuy nhiên, khi hệ thống mở rộng với nhiều instance, cần cơ chế phân phối ID để tránh xung đột. Zookeeper được sử dụng để cấp phát các khoảng ID riêng biệt cho từng instance, đảm bảo tính duy nhất. Bên cạnh đó, do tỷ lệ đọc/ghi là 100:1, việc truy vấn cơ sở dữ liệu thường xuyên sẽ gây quá tải. Để khắc phục, Redis được dùng làm lớp cache lưu các URL rút gọn giúp giảm truy vấn và cải thiện hiệu suất hệ thống.
